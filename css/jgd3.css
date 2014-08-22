@@ -1,0 +1,83 @@
+body {
+  font: 10px sans-serif;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+@media all and (max-width: 500px) { /* screen size until 500px */
+      #chart text {
+        font-size: 0.7em;
+      }
+    }
+
+
+/*.x.axis path {
+  display: none;
+}
+*/
+.line {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 1.5px;
+}
+
+#dropBoxButton {
+	padding-top: 15px;
+}
+
+#customDropBoxButton {
+	padding-top: 7.5px;
+}
+
+.btn-file {
+    position: relative;
+    overflow: hidden;
+}
+.btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 999px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    background: white;
+    cursor: inherit;
+    display: block;
+}
+
+#navmenu-padded {
+  margin: 0px 20px 0px 20px;
+}
+
+/* set padding around chart */
+.chart-area {
+  padding-left: 0px;
+  padding-right: 0px;
+}
+
+.grid-y line {
+  stroke: #d3d3d3;
+}
+
+.grid-x line {
+  stroke: #d3d3d3;
+}
+
+.border-row {
+    border-top: 1px solid #ccc;
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+.btn-ra-menu {
+  margin-bottom: 5px;
+}

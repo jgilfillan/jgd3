@@ -14,6 +14,15 @@ JGD3.prototype.indexOf = function (obj, array, accessor) {
   return array.map(accessor).indexOf(obj);
 }
 
+JGD3.prototype.populateSelectControl = function(id, array, state) {
+  d3.select(id).attr('disabled', (state === 'disabled') ? 'disabled': null).selectAll('.select-option').data(array)
+    .enter()
+    .append('option')
+    .attr('class', 'select-option')
+    .text(function(d) { return d; })
+    ;
+}
+
 function Dataset(data, fileName) {
   this.data = data;
   this.sourceFileName = fileName;
@@ -26,6 +35,14 @@ function Dataset(data, fileName) {
   this.colourV = '';
   this.sizeV = '';
   this.filterV = [];
+
+  // populate selection controls
+  jgd3.populateSelectControl('#xSelect', this.continuousV);
+  jgd3.populateSelectControl('#ySelect', this.continuousV);
+  jgd3.populateSelectControl('#colourSelect', this.discreteV);
+  jgd3.populateSelectControl('#sizeSelect', this.continuousV);
+  jgd3.populateSelectControl('#tooltipSelect', this.continuousV.concat(this.discreteV));
+  jgd3.populateSelectControl('#filterSelect', this.discreteV);
 }
 
 Dataset.prototype.getEmptyVariables = function(data) {

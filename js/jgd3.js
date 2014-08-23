@@ -1,8 +1,14 @@
 var jgd3 = new JGD3;
 
 function JGD3() {
+  // page info
+  this.outerDim = {width: null, height: null};
+  this.margin = {left: null, top: null, bottom: null, right: null};
+
   // properties
   this.datasets = [];
+  this.scale = {x: null, y: null, };
+  this.axis = {x: null, y: null};
 }
 
 // returns the index of a given obj in a given array.  optionally accepts an accessor function.
@@ -14,13 +20,40 @@ JGD3.prototype.indexOf = function (obj, array, accessor) {
   return array.map(accessor).indexOf(obj);
 }
 
-JGD3.prototype.populateSelectControl = function(id, array, state) {
-  d3.select(id).attr('disabled', (state === 'disabled') ? 'disabled': null).selectAll('.select-option').data(array)
+JGD3.prototype.populateSelectControls = function(parameterList) {
+  var formGroup = d3.select('#parameter-form').selectAll('.form-group').data(parameterList)
+    .enter()
+    .append('div')
+    .attr('class', function(d) {return (d.required) ? 'form-group has-error' : 'form-group';} )  //add has error for required fields
+    .attr('id', function(d) {return d.id; })
+    ;
+
+  // labels
+  formGroup.append('label')
+    .attr('for', function(d) { return d.id; })
+    .text(function(d) { return d.label; })
+    ;
+
+  // controls
+  formGroup.append('select')
+    .attr('class', 'form-control input-sm')
+    .attr('multiple', function(d) { return (d.type === 'multi-select') ? 'multi' : null; })
+    .selectAll('option')    // insert parameter values
+    .data(function(d) {return d.list; }) 
     .enter()
     .append('option')
-    .attr('class', 'select-option')
-    .text(function(d) { return d; })
+    .attr('value', function(d) {return d.value})
+    .text(function(d) {return d.label; })
     ;
+}
+
+JGD3.prototype.Parameter = function(id, label, type, required, list) {
+  this.id = id;
+  this.label = label;
+  this.element = '#' + id;
+  this.type = type;   //select, multi-select
+  this.required = required;  //boolean
+  this.list = d3.merge([['-- No Mapping--'], list]).map(function(d, i) { return (i = 1) ? { label: d, value: '', selected: true } : { label: d, value: d, selected: false }; });
 }
 
 function Dataset(data, fileName) {
@@ -30,20 +63,21 @@ function Dataset(data, fileName) {
   this.continuousV = this.getContinuousVariables(this.data, this.emptyV);
   this.timeseriesV = [];
   this.discreteV = this.getDiscreteVariables(this.data, this.emptyV);
-  this.xV = '';
-  this.yV = '';
-  this.colourV = '';
-  this.sizeV = '';
-  this.filterV = [];
 
-  // populate selection controls
-  jgd3.populateSelectControl('#xSelect', this.continuousV);
-  jgd3.populateSelectControl('#ySelect', this.continuousV);
-  jgd3.populateSelectControl('#colourSelect', this.discreteV);
-  jgd3.populateSelectControl('#sizeSelect', this.continuousV);
-  jgd3.populateSelectControl('#tooltipSelect', this.continuousV.concat(this.discreteV));
-  jgd3.populateSelectControl('#filterSelect', this.discreteV);
+  // initialise parameters array, then populate
+  this.parameters = [];
+  this.parameters.push(new JGD3.prototype.Parameter('xSelect', 'x Axis Mapping', 'select', true, this.continuousV));
+  this.parameters.push(new JGD3.prototype.Parameter('ySelect', 'y Axis Mapping', 'select', true, this.continuousV));
+  this.parameters.push(new JGD3.prototype.Parameter('colourSelect', 'Color Mapping', 'select', false, this.discreteV));
+  this.parameters.push(new JGD3.prototype.Parameter('sizeSelect', 'Size Mapping', 'select', false, this.continuousV));
+  this.parameters.push(new JGD3.prototype.Parameter('tooltipSelect', 'Tooltip Mapping', 'multi-select', false, this.continuousV.concat(this.discreteV)));
+  this.parameters.push(new JGD3.prototype.Parameter('filterSelect', 'Filter Mapping', 'multi-select', false, this.discreteV));
+
+  // add parameter controls to off-canvas nav
+  jgd3.populateSelectControls(this.parameters);
+
 }
+
 
 Dataset.prototype.getEmptyVariables = function(data) {
   var keys = Object.keys(data[0]),

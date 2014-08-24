@@ -20,12 +20,28 @@ JGD3.prototype.indexOf = function (obj, array, accessor) {
   return array.map(accessor).indexOf(obj);
 }
 
+// function to run when a parameter changes
+JGD3.prototype.parameterChanged = function(d) {
+  //array of selected values
+  var changedElement = d3.select(this),
+      selected = changedElement.selectAll('option:checked')[0].map(function(d) {return d.value;}),
+      changedElementId = changedElement[0][0].id
+      ;
+
+  console.log(changedElementId);
+  console.log(selected);
+
+  // change scales based on changes in parameters
+
+}
+
 JGD3.prototype.populateSelectControls = function(parameterList) {
   var formGroup = d3.select('#parameter-form').selectAll('.form-group').data(parameterList)
     .enter()
     .append('div')
     .attr('class', function(d) {return (d.required) ? 'form-group has-error' : 'form-group';} )  //add has error for required fields
     .attr('id', function(d) {return d.id; })
+    .on('change', JGD3.prototype.parameterChanged)
     ;
 
   // labels
@@ -53,7 +69,7 @@ JGD3.prototype.Parameter = function(id, label, type, required, list) {
   this.element = '#' + id;
   this.type = type;   //select, multi-select
   this.required = required;  //boolean
-  this.list = d3.merge([['-- No Mapping--'], list]).map(function(d, i) { return (i = 1) ? { label: d, value: '', selected: true } : { label: d, value: d, selected: false }; });
+  this.list = d3.merge([['-- No Mapping--'], list]).map(function(d, i) { return (i === 0) ? { label: d, value: '', selected: true } : { label: d, value: d, selected: false }; });
 }
 
 function Dataset(data, fileName) {
@@ -70,6 +86,7 @@ function Dataset(data, fileName) {
   this.parameters.push(new JGD3.prototype.Parameter('ySelect', 'y Axis Mapping', 'select', true, this.continuousV));
   this.parameters.push(new JGD3.prototype.Parameter('colourSelect', 'Color Mapping', 'select', false, this.discreteV));
   this.parameters.push(new JGD3.prototype.Parameter('sizeSelect', 'Size Mapping', 'select', false, this.continuousV));
+  this.parameters.push(new JGD3.prototype.Parameter('alphaSelect', 'Alpha Mapping', 'select', false, this.continuousV));
   this.parameters.push(new JGD3.prototype.Parameter('tooltipSelect', 'Tooltip Mapping', 'multi-select', false, this.continuousV.concat(this.discreteV)));
   this.parameters.push(new JGD3.prototype.Parameter('filterSelect', 'Filter Mapping', 'multi-select', false, this.discreteV));
 

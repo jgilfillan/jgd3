@@ -1,5 +1,9 @@
 var jgd3 = new JGD3;
 
+// comment out for real run..
+readDropBoxFile([{link: 'http://localhost:1651/sample/BenchmarkDC_Disclosure_2012.csv', name: 'BenchmarkDC_Disclosure_2012.csv'}]);
+
+
 function JGD3() {
   // page info
   this.outerDim = {width: null, height: null};
@@ -66,7 +70,6 @@ JGD3.prototype.populateSelectControls = function(parameterList) {
 JGD3.prototype.Parameter = function(id, label, type, required, list) {
   this.id = id;
   this.label = label;
-  this.element = '#' + id;
   this.type = type;   //select, multi-select
   this.required = required;  //boolean
   this.list = d3.merge([['-- No Mapping--'], list]).map(function(d, i) { return (i === 0) ? { label: d, value: '', selected: true } : { label: d, value: d, selected: false }; });

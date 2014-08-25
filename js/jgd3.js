@@ -6,17 +6,18 @@ readDropBoxFile([{link: 'http://localhost:1651/sample/BenchmarkDC_Disclosure_201
 
 function JGD3() {
   // page info
-  this.outerDim = {width: null, height: null};
-  this.margin = {left: null, top: null, bottom: null, right: null};
+  this.outerDim = {width: 800, height: 600};
+  this.margin = {left: 20, top: 20, bottom: 20, right: 20};
 
   // properties
   this.datasets = [];
-  this.scale = {x: null, y: null, };
+  this.scale = {x: d3.scale.linear().range([0, this.outerDim.width - this.margin.left - this.margin.right]),
+                y: d3.scale.linear([0, this.outerDim.height - this.margin.top - this.margin.bottom])};
   this.axis = {x: null, y: null};
 }
 
 // returns the index of a given obj in a given array.  optionally accepts an accessor function.
-JGD3.prototype.indexOf = function (obj, array, accessor) {
+jgd3.indexOf = function (obj, array, accessor) {
   if (accessor === undefined) {
     accessor = function(d) {return d;};
   }
@@ -25,7 +26,7 @@ JGD3.prototype.indexOf = function (obj, array, accessor) {
 }
 
 // function to run when a parameter changes
-JGD3.prototype.parameterChanged = function(d) {
+jgd3.parameterChanged = function(d) {
   //array of selected values
   var changedElement = d3.select(this),
       selected = changedElement.selectAll('option:checked')[0].map(function(d) {return d.value;}),
@@ -35,17 +36,22 @@ JGD3.prototype.parameterChanged = function(d) {
   console.log(changedElementId);
   console.log(selected);
 
-  // change scales based on changes in parameters
+  (changedElementId === 'xSelect') ? jgd3.resetScaleX(jgd3.scale.x, selected[0]) : null;
 
 }
 
-JGD3.prototype.populateSelectControls = function(parameterList) {
+jgd3.resetScaleX = function(scale, parameter) {
+  console.log(this.datasets[0].data);
+  scale.domain(d3.extent(this.datasets[0].data, function(d) {return (+d[parameter] === 0) ? null : +d[parameter]; }));
+} 
+
+jgd3.populateSelectControls = function(parameterList) {
   var formGroup = d3.select('#parameter-form').selectAll('.form-group').data(parameterList)
     .enter()
     .append('div')
     .attr('class', function(d) {return (d.required) ? 'form-group has-error' : 'form-group';} )  //add has error for required fields
     .attr('id', function(d) {return d.id; })
-    .on('change', JGD3.prototype.parameterChanged)
+    .on('change', jgd3.parameterChanged)
     ;
 
   // labels
@@ -67,7 +73,7 @@ JGD3.prototype.populateSelectControls = function(parameterList) {
     ;
 }
 
-JGD3.prototype.Parameter = function(id, label, type, required, list) {
+jgd3.Parameter = function(id, label, type, required, list) {
   this.id = id;
   this.label = label;
   this.type = type;   //select, multi-select
@@ -85,13 +91,13 @@ function Dataset(data, fileName) {
 
   // initialise parameters array, then populate
   this.parameters = [];
-  this.parameters.push(new JGD3.prototype.Parameter('xSelect', 'x Axis Mapping', 'select', true, this.continuousV));
-  this.parameters.push(new JGD3.prototype.Parameter('ySelect', 'y Axis Mapping', 'select', true, this.continuousV));
-  this.parameters.push(new JGD3.prototype.Parameter('colourSelect', 'Color Mapping', 'select', false, this.discreteV));
-  this.parameters.push(new JGD3.prototype.Parameter('sizeSelect', 'Size Mapping', 'select', false, this.continuousV));
-  this.parameters.push(new JGD3.prototype.Parameter('alphaSelect', 'Alpha Mapping', 'select', false, this.continuousV));
-  this.parameters.push(new JGD3.prototype.Parameter('tooltipSelect', 'Tooltip Mapping', 'multi-select', false, this.continuousV.concat(this.discreteV)));
-  this.parameters.push(new JGD3.prototype.Parameter('filterSelect', 'Filter Mapping', 'multi-select', false, this.discreteV));
+  this.parameters.push(new jgd3.Parameter('xSelect', 'x Axis Mapping', 'select', true, this.continuousV));
+  this.parameters.push(new jgd3.Parameter('ySelect', 'y Axis Mapping', 'select', true, this.continuousV));
+  this.parameters.push(new jgd3.Parameter('colourSelect', 'Color Mapping', 'select', false, this.discreteV));
+  this.parameters.push(new jgd3.Parameter('sizeSelect', 'Size Mapping', 'select', false, this.continuousV));
+  this.parameters.push(new jgd3.Parameter('alphaSelect', 'Alpha Mapping', 'select', false, this.continuousV));
+  this.parameters.push(new jgd3.Parameter('tooltipSelect', 'Tooltip Mapping', 'multi-select', false, this.continuousV.concat(this.discreteV)));
+  this.parameters.push(new jgd3.Parameter('filterSelect', 'Filter Mapping', 'multi-select', false, this.discreteV));
 
   // add parameter controls to off-canvas nav
   jgd3.populateSelectControls(this.parameters);

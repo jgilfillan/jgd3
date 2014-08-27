@@ -52,20 +52,14 @@ jgd3.getElementValue = function(selection) {
 jgd3.parameterChanged = function(d) {
   //array of selected values
   var changedElement = d3.select(this),
-      // selected = changedElement.selectAll('option:checked')[0].map(function(d) {return d.value;}),
       selected = jgd3.getElementValue(changedElement),
       changedElementId = changedElement[0][0].id
       ;
 
-  console.log(changedElementId);
-  console.log(selected);
+  console.log(changedElementId, selected);
 
-  // (changedElementId === 'xSelect') ? jgd3.resetLinearScale(jgd3.scale.x, selected[0]) : null;
   (changedElementId === 'xSelect') ? jgd3.resetLinearScale(jgd3.scale.x, function(d) {return (+d[selected[0]] === 0) ? null : +d[selected[0]]; }) : null;
-  // (changedElementId === 'ySelect') ? jgd3.resetLinearScale(jgd3.scale.y, selected[0]) : null;
   (changedElementId === 'ySelect') ? jgd3.resetLinearScale(jgd3.scale.y, function(d) {return (+d[selected[0]] === 0) ? null : +d[selected[0]]; }) : null;
-
-
 
   //put condition here to only run if x and y defined
   jgd3.redrawChart();
@@ -73,10 +67,7 @@ jgd3.parameterChanged = function(d) {
 }
 
 // takes a scale and an accessor function
-// jgd3.resetLinearScale = function(scale, parameter) {
 jgd3.resetLinearScale = function(scale, accessor) {
-  // this.
-  // scale.domain(d3.extent(this.datasets[0].data, function(d) {return (+d[parameter] === 0) ? null : +d[parameter]; }));
   scale.domain(d3.extent(this.datasets[0].data, accessor));
 }
 

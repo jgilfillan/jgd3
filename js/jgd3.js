@@ -12,8 +12,10 @@ function JGD3(chartElementSelector) {
   // properties
   this.datasets = [];
   this.scale = {x: d3.scale.linear().range([0, this.outerDim.width - this.margin.left - this.margin.right]),
-                y: d3.scale.linear([0, this.outerDim.height - this.margin.top - this.margin.bottom])};
+                y: d3.scale.linear().range([this.outerDim.height - this.margin.top - this.margin.bottom, 0])};
   this.axis = {x: null, y: null};
+
+  console.log(this.scale.y.range());
 
   // initialise chart
   this.chart = d3.select(chartElementSelector).append('svg')
@@ -42,41 +44,75 @@ jgd3.indexOf = function (obj, array, accessor) {
   return array.map(accessor).indexOf(obj);
 }
 
+jgd3.getElementValue = function(selection) {
+  return selection.selectAll('option:checked')[0].map(function(d) {return d.value;});
+}
+
 // function to run when a parameter changes
 jgd3.parameterChanged = function(d) {
   //array of selected values
   var changedElement = d3.select(this),
-      selected = changedElement.selectAll('option:checked')[0].map(function(d) {return d.value;}),
+      // selected = changedElement.selectAll('option:checked')[0].map(function(d) {return d.value;}),
+      selected = jgd3.getElementValue(changedElement),
       changedElementId = changedElement[0][0].id
       ;
 
   console.log(changedElementId);
   console.log(selected);
 
-  (changedElementId === 'xSelect') ? jgd3.resetLinearScale(jgd3.scale.x, selected[0]) : null;
-  (changedElementId === 'ySelect') ? jgd3.resetLinearScale(jgd3.scale.y, selected[0]) : null;
+  // (changedElementId === 'xSelect') ? jgd3.resetLinearScale(jgd3.scale.x, selected[0]) : null;
+  (changedElementId === 'xSelect') ? jgd3.resetLinearScale(jgd3.scale.x, function(d) {return (+d[selected[0]] === 0) ? null : +d[selected[0]]; }) : null;
+  // (changedElementId === 'ySelect') ? jgd3.resetLinearScale(jgd3.scale.y, selected[0]) : null;
+  (changedElementId === 'ySelect') ? jgd3.resetLinearScale(jgd3.scale.y, function(d) {return (+d[selected[0]] === 0) ? null : +d[selected[0]]; }) : null;
+
+
 
   //put condition here to only run if x and y defined
   jgd3.redrawChart();
 
 }
 
-jgd3.resetLinearScale = function(scale, parameter) {
-  scale.domain(d3.extent(this.datasets[0].data, function(d) {return (+d[parameter] === 0) ? null : +d[parameter]; }));
+// takes a scale and an accessor function
+// jgd3.resetLinearScale = function(scale, parameter) {
+jgd3.resetLinearScale = function(scale, accessor) {
+  // this.
+  // scale.domain(d3.extent(this.datasets[0].data, function(d) {return (+d[parameter] === 0) ? null : +d[parameter]; }));
+  scale.domain(d3.extent(this.datasets[0].data, accessor));
 }
 
 jgd3.redrawChart = function() {
-  this.chartArea.selectAll('.dot')
+  var dots = this.chartArea.selectAll('.dot')
     .data(this.datasets[0].data)
-    .enter()
+  ;
+
+  //update
+  dots.transition().duration(1500)
+    .attr('cx', function(d) {return jgd3.getScaledValue(jgd3.scale.x, +d[jgd3.getElementValue(d3.select('#xSelect'))], 0); })
+    .attr('cy', function(d) {return jgd3.getScaledValue(jgd3.scale.y, +d[jgd3.getElementValue(d3.select('#ySelect'))], 0); })
+  ;
+
+  // enter
+  dots.enter()
     .append('circle')
     .attr('class', 'dot')
     .attr('r', 3.5)
-    .attr('cx', function(d) {return jgd3.scale.x(+d); })
-    .attr('cy', function(d) {return jgd3.scale.y(+d); })
+    .attr('cx', 0)
+    .attr('cy', 0)
+    .transition().duration(1500)
+    .attr('cx', function(d) {return jgd3.getScaledValue(jgd3.scale.x, +d[jgd3.getElementValue(d3.select('#xSelect'))], 0); })
+    .attr('cy', function(d) {return jgd3.getScaledValue(jgd3.scale.y, +d[jgd3.getElementValue(d3.select('#ySelect'))], 0); })
     .style('fill', 'black')
-    ;
+  ;
 
+  //remove
+  dots.exit().transition().duration(1500).remove();
+
+}
+
+// takes a d3 scale, a value, and a value to return if the scaled value is not a number
+jgd3.getScaledValue = function(scale, value, ifNaN) {
+  var val = scale(value);
+  return (isNaN(val)) ? ifNaN : val;
 }
 
 

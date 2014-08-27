@@ -1,10 +1,10 @@
-var jgd3 = new JGD3;
+var jgd3 = new JGD3('#chart');
 
 // comment out for real run..
 readDropBoxFile([{link: 'http://localhost:1651/sample/BenchmarkDC_Disclosure_2012.csv', name: 'BenchmarkDC_Disclosure_2012.csv'}]);
 
 
-function JGD3() {
+function JGD3(chartElementSelector) {
   // page info
   this.outerDim = {width: 800, height: 600};
   this.margin = {left: 20, top: 20, bottom: 20, right: 20};
@@ -14,6 +14,23 @@ function JGD3() {
   this.scale = {x: d3.scale.linear().range([0, this.outerDim.width - this.margin.left - this.margin.right]),
                 y: d3.scale.linear([0, this.outerDim.height - this.margin.top - this.margin.bottom])};
   this.axis = {x: null, y: null};
+
+  // initialise chart
+  this.chart = d3.select(chartElementSelector).append('svg')
+    .attr('height', this.outerDim.height)
+    .attr('width', this.outerDim.width)
+    .attr('class', 'chart')
+    ;
+
+  this.chartArea = this.chart.append('g')
+    .attr('transform', translateString(this.margin.left, this.margin.top))
+    .attr('class', 'chart-area')
+    ;
+}
+
+//translate function
+function translateString(x, y) {
+  return 'translate(' + x + ',' + y + ')';
 }
 
 // returns the index of a given obj in a given array.  optionally accepts an accessor function.
@@ -36,14 +53,32 @@ jgd3.parameterChanged = function(d) {
   console.log(changedElementId);
   console.log(selected);
 
-  (changedElementId === 'xSelect') ? jgd3.resetScaleX(jgd3.scale.x, selected[0]) : null;
+  (changedElementId === 'xSelect') ? jgd3.resetLinearScale(jgd3.scale.x, selected[0]) : null;
+  (changedElementId === 'ySelect') ? jgd3.resetLinearScale(jgd3.scale.y, selected[0]) : null;
+
+  //put condition here to only run if x and y defined
+  jgd3.redrawChart();
 
 }
 
-jgd3.resetScaleX = function(scale, parameter) {
-  console.log(this.datasets[0].data);
+jgd3.resetLinearScale = function(scale, parameter) {
   scale.domain(d3.extent(this.datasets[0].data, function(d) {return (+d[parameter] === 0) ? null : +d[parameter]; }));
-} 
+}
+
+jgd3.redrawChart = function() {
+  this.chartArea.selectAll('.dot')
+    .data(this.datasets[0].data)
+    .enter()
+    .append('circle')
+    .attr('class', 'dot')
+    .attr('r', 3.5)
+    .attr('cx', function(d) {return jgd3.scale.x(+d); })
+    .attr('cy', function(d) {return jgd3.scale.y(+d); })
+    .style('fill', 'black')
+    ;
+
+}
+
 
 jgd3.populateSelectControls = function(parameterList) {
   var formGroup = d3.select('#parameter-form').selectAll('.form-group').data(parameterList)

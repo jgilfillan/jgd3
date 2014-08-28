@@ -81,3 +81,11 @@ body {
 .btn-ra-menu {
   margin-bottom: 5px;
 }
+
+.dot:hover {
+  fill: black;
+}
+
+.dot:hover {
+  fill: red;
+}

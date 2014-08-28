@@ -6,14 +6,22 @@ readDropBoxFile([{link: 'http://localhost:1651/sample/BenchmarkDC_Disclosure_201
 
 function JGD3(chartElementSelector) {
   // page info
-  this.outerDim = {width: 800, height: 600};
-  this.margin = {left: 20, top: 20, bottom: 20, right: 20};
+  this.outerDim = {width: 1100, height: 600};
+  this.margin = {left: 80, top: 20, bottom: 20, right: 20};
+  this.innerDim = {
+    width: this.outerDim.width - this.margin.left - this.margin.right,
+    height: this.outerDim.height - this.margin.top - this.margin.bottom
+  };
 
   // properties
   this.datasets = [];
-  this.scale = {x: d3.scale.linear().range([0, this.outerDim.width - this.margin.left - this.margin.right]),
-                y: d3.scale.linear().range([this.outerDim.height - this.margin.top - this.margin.bottom, 0])};
-  this.axis = {x: null, y: null};
+  this.scale = {
+    x: d3.scale.linear().range([0, this.innerDim.width]),
+    y: d3.scale.linear().range([this.innerDim.height, 0])
+  };
+  this.axis = {
+    x: d3.svg.axis().scale(this.scale.x).orient("bottom"),
+    y: d3.svg.axis().scale(this.scale.y).orient("left")};
 
   console.log(this.scale.y.range());
 
@@ -28,6 +36,9 @@ function JGD3(chartElementSelector) {
     .attr('transform', translateString(this.margin.left, this.margin.top))
     .attr('class', 'chart-area')
     ;
+
+  this.chartAxisX = this.chartArea.append('g').attr('class', 'axis').attr('transform', translateString(0, this.innerDim.height));;
+  this.chartAxisY = this.chartArea.append('g').attr('class', 'axis').attr('transform', translateString(0, 0));;
 }
 
 //translate function
@@ -76,6 +87,8 @@ jgd3.redrawChart = function() {
     .data(this.datasets[0].data)
   ;
 
+  // POINTS
+
   //update
   dots.transition().duration(1500)
     .attr('cx', function(d) {return jgd3.getScaledValue(jgd3.scale.x, +d[jgd3.getElementValue(d3.select('#xSelect'))], 0); })
@@ -92,11 +105,15 @@ jgd3.redrawChart = function() {
     .transition().duration(1500)
     .attr('cx', function(d) {return jgd3.getScaledValue(jgd3.scale.x, +d[jgd3.getElementValue(d3.select('#xSelect'))], 0); })
     .attr('cy', function(d) {return jgd3.getScaledValue(jgd3.scale.y, +d[jgd3.getElementValue(d3.select('#ySelect'))], 0); })
-    .style('fill', 'black')
+    // .style('fill', 'black')
   ;
 
   //remove
   dots.exit().transition().duration(1500).remove();
+
+  // AXIS
+  this.chartAxisX.transition().duration(1500).call(this.axis.x);
+  this.chartAxisY.transition().duration(1500).call(this.axis.y);
 
 }
 

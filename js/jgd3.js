@@ -116,7 +116,7 @@ jgd3.redrawChart = function() {
     .transition().duration(1500)
     .attr('cx', function(d) {return jgd3.getScaledLinearValue(jgd3.scale.x, +d[jgd3.getElementValue(d3.select('#xSelect'))], 0); })
     .attr('cy', function(d) {return jgd3.getScaledLinearValue(jgd3.scale.y, +d[jgd3.getElementValue(d3.select('#ySelect'))], 0); })
-    .style('fill', function(d) {return jgd3.getScaledOrdinalValue(jgd3.scale.colour, d[jgd3.getElementValue(d3.select('#colourSelect'))], '#d3d3d3'); })
+    .style('fill', function(d) {return jgd3.getScaledOrdinalValue(jgd3.scale.colour, d[jgd3.getElementValue(d3.select('#colourSelect'))], 'black'); })
   ;
 
   //remove

@@ -1,7 +1,7 @@
 var jgd3 = new JGD3('#chart');
 
 // comment out for real run..
-readDropBoxFile([{link: 'http://localhost:1651/sample/BenchmarkDC_Disclosure_2012.csv', name: 'BenchmarkDC_Disclosure_2012.csv'}]);
+// readDropBoxFile([{link: 'http://localhost:1651/sample/BenchmarkDC_Disclosure_2012.csv', name: 'BenchmarkDC_Disclosure_2012.csv'}]);
 
 
 function JGD3(chartElementSelector) {
@@ -17,7 +17,9 @@ function JGD3(chartElementSelector) {
   this.datasets = [];
   this.scale = {
     x: d3.scale.linear().range([0, this.innerDim.width]),
-    y: d3.scale.linear().range([this.innerDim.height, 0])
+    y: d3.scale.linear().range([this.innerDim.height, 0]),
+    size: d3.scale.linear().range([2, 15]),
+    colour: d3.scale.ordinal().range(['#e41a1c','#377eb8','#4daf4a','#984ea3','#ff7f00','#ffff33','#a65628','#f781bf','#999999'])
   };
   this.axis = {
     x: d3.svg.axis().scale(this.scale.x).orient("bottom"),
@@ -71,6 +73,8 @@ jgd3.parameterChanged = function(d) {
 
   (changedElementId === 'xSelect') ? jgd3.resetLinearScale(jgd3.scale.x, function(d) {return (+d[selected[0]] === 0) ? null : +d[selected[0]]; }) : null;
   (changedElementId === 'ySelect') ? jgd3.resetLinearScale(jgd3.scale.y, function(d) {return (+d[selected[0]] === 0) ? null : +d[selected[0]]; }) : null;
+  (changedElementId === 'sizeSelect') ? jgd3.resetLinearScale(jgd3.scale.size, function(d) {return (+d[selected[0]] === 0) ? null : +d[selected[0]]; }) : null;
+  (changedElementId === 'colourSelect') ? jgd3.resetOrdinalScale(jgd3.scale.colour, function(d) {return (d[selected[0]] === 0) ? null : d[selected[0]]; }) : null;
 
   //put condition here to only run if x and y defined
   jgd3.redrawChart();
@@ -82,6 +86,11 @@ jgd3.resetLinearScale = function(scale, accessor) {
   scale.domain(d3.extent(this.datasets[0].data, accessor));
 }
 
+jgd3.resetOrdinalScale = function(scale, accessor) {
+
+  scale.domain(d3.set(this.datasets[0].data.map(accessor)));
+}
+
 jgd3.redrawChart = function() {
   var dots = this.chartArea.selectAll('.dot')
     .data(this.datasets[0].data)
@@ -91,21 +100,23 @@ jgd3.redrawChart = function() {
 
   //update
   dots.transition().duration(1500)
-    .attr('cx', function(d) {return jgd3.getScaledValue(jgd3.scale.x, +d[jgd3.getElementValue(d3.select('#xSelect'))], 0); })
-    .attr('cy', function(d) {return jgd3.getScaledValue(jgd3.scale.y, +d[jgd3.getElementValue(d3.select('#ySelect'))], 0); })
+    .attr('cx', function(d) {return jgd3.getScaledLinearValue(jgd3.scale.x, +d[jgd3.getElementValue(d3.select('#xSelect'))], 0); })
+    .attr('cy', function(d) {return jgd3.getScaledLinearValue(jgd3.scale.y, +d[jgd3.getElementValue(d3.select('#ySelect'))], 0); })
+    .attr('r', function(d) {return jgd3.getScaledLinearValue(jgd3.scale.size, +d[jgd3.getElementValue(d3.select('#sizeSelect'))], 3.5); })
+    .style('fill', function(d) {return jgd3.getScaledOrdinalValue(jgd3.scale.colour, d[jgd3.getElementValue(d3.select('#colourSelect'))], '#d3d3d3'); })
   ;
 
   // enter
   dots.enter()
     .append('circle')
     .attr('class', 'dot')
-    .attr('r', 3.5)
+    .attr('r', function(d) {return jgd3.getScaledLinearValue(jgd3.scale.size, +d[jgd3.getElementValue(d3.select('#sizeSelect'))], 3.5); })
     .attr('cx', 0)
     .attr('cy', 0)
     .transition().duration(1500)
-    .attr('cx', function(d) {return jgd3.getScaledValue(jgd3.scale.x, +d[jgd3.getElementValue(d3.select('#xSelect'))], 0); })
-    .attr('cy', function(d) {return jgd3.getScaledValue(jgd3.scale.y, +d[jgd3.getElementValue(d3.select('#ySelect'))], 0); })
-    // .style('fill', 'black')
+    .attr('cx', function(d) {return jgd3.getScaledLinearValue(jgd3.scale.x, +d[jgd3.getElementValue(d3.select('#xSelect'))], 0); })
+    .attr('cy', function(d) {return jgd3.getScaledLinearValue(jgd3.scale.y, +d[jgd3.getElementValue(d3.select('#ySelect'))], 0); })
+    .style('fill', function(d) {return jgd3.getScaledOrdinalValue(jgd3.scale.colour, d[jgd3.getElementValue(d3.select('#colourSelect'))], '#d3d3d3'); })
   ;
 
   //remove
@@ -118,9 +129,13 @@ jgd3.redrawChart = function() {
 }
 
 // takes a d3 scale, a value, and a value to return if the scaled value is not a number
-jgd3.getScaledValue = function(scale, value, ifNaN) {
+jgd3.getScaledLinearValue = function(scale, value, ifNaN) {
   var val = scale(value);
   return (isNaN(val)) ? ifNaN : val;
+}
+
+jgd3.getScaledOrdinalValue = function(scale, value, ifNaN) {
+  return scale(value);
 }
 
 
@@ -172,7 +187,7 @@ function Dataset(data, fileName) {
   this.parameters = [];
   this.parameters.push(new jgd3.Parameter('xSelect', 'x Axis Mapping', 'select', true, this.continuousV));
   this.parameters.push(new jgd3.Parameter('ySelect', 'y Axis Mapping', 'select', true, this.continuousV));
-  this.parameters.push(new jgd3.Parameter('colourSelect', 'Color Mapping', 'select', false, this.discreteV));
+  this.parameters.push(new jgd3.Parameter('colourSelect', 'Colour Mapping', 'select', false, this.discreteV));
   this.parameters.push(new jgd3.Parameter('sizeSelect', 'Size Mapping', 'select', false, this.continuousV));
   this.parameters.push(new jgd3.Parameter('alphaSelect', 'Alpha Mapping', 'select', false, this.continuousV));
   this.parameters.push(new jgd3.Parameter('tooltipSelect', 'Tooltip Mapping', 'multi-select', false, this.continuousV.concat(this.discreteV)));

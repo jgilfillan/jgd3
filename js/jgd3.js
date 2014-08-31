@@ -5,6 +5,7 @@ var jgd3 = new JGD3('#chart');
 
 
 function JGD3(chartElementSelector) {
+
   // page info
   this.outerDim = {width: 1100, height: 600};
   this.margin = {left: 80, top: 20, bottom: 20, right: 20};
@@ -19,13 +20,14 @@ function JGD3(chartElementSelector) {
     x: d3.scale.linear().range([0, this.innerDim.width]),
     y: d3.scale.linear().range([this.innerDim.height, 0]),
     size: d3.scale.linear().range([2, 15]),
-    colour: d3.scale.ordinal().range(['#e41a1c','#377eb8','#4daf4a','#984ea3','#ff7f00','#ffff33','#a65628','#f781bf','#999999'])
+    colour: d3.scale.ordinal().range(['#e41a1c','#377eb8','#4daf4a','#984ea3','#ff7f00','#ffff33','#a65628','#f781bf','#999999']),
+    tooltip: []
   };
   this.axis = {
     x: d3.svg.axis().scale(this.scale.x).orient("bottom"),
     y: d3.svg.axis().scale(this.scale.y).orient("left")};
 
-  console.log(this.scale.y.range());
+
 
   // initialise chart
   this.chart = d3.select(chartElementSelector).append('svg')
@@ -41,6 +43,15 @@ function JGD3(chartElementSelector) {
 
   this.chartAxisX = this.chartArea.append('g').attr('class', 'axis').attr('transform', translateString(0, this.innerDim.height));;
   this.chartAxisY = this.chartArea.append('g').attr('class', 'axis').attr('transform', translateString(0, 0));;
+
+  // set up d3-tip tooltip - see https://github.com/Caged/d3-tip
+  this.tip = d3.tip()
+    .attr('class', 'd3-tip')
+    .direction('n')
+    .offset([-10, 0])
+  ;
+
+  this.chart.call(this.tip);
 }
 
 //translate function
@@ -75,6 +86,7 @@ jgd3.parameterChanged = function(d) {
   (changedElementId === 'ySelect') ? jgd3.resetLinearScale(jgd3.scale.y, function(d) {return (+d[selected[0]] === 0) ? null : +d[selected[0]]; }) : null;
   (changedElementId === 'sizeSelect') ? jgd3.resetLinearScale(jgd3.scale.size, function(d) {return (+d[selected[0]] === 0) ? null : +d[selected[0]]; }) : null;
   (changedElementId === 'colourSelect') ? jgd3.resetOrdinalScale(jgd3.scale.colour, function(d) {return (d[selected[0]] === 0) ? null : d[selected[0]]; }) : null;
+  (changedElementId === 'tooltipSelect') ? jgd3.setTooltips() : null;
 
   //put condition here to only run if x and y defined
   jgd3.redrawChart();
@@ -91,6 +103,22 @@ jgd3.resetOrdinalScale = function(scale, accessor) {
   scale.domain(d3.set(this.datasets[0].data.map(accessor)));
 }
 
+jgd3.setTooltips = function() {
+  jgd3.tip.html(function(d) {
+    var tooltips = jgd3.getElementValue(d3.select('#tooltipSelect')).filter(function(d) {return d !== '';});
+    var html = '';
+    
+    html = tooltips.map(function(x) {
+      var val = (jgd3.datasets[0].continuousV.indexOf(x) > -1) ? Math.round(100 * +d[x]) / 100 : d[x];
+      console.log(val);
+      return '<p><strong>' + x + ':</strong>' + '<span style="color: red"> ' + val + '</span></p>';
+    }).join('');
+
+    console.log(html);
+    return html;
+  });
+}
+
 jgd3.redrawChart = function() {
   var dots = this.chartArea.selectAll('.dot')
     .data(this.datasets[0].data)
@@ -103,7 +131,7 @@ jgd3.redrawChart = function() {
     .attr('cx', function(d) {return jgd3.getScaledLinearValue(jgd3.scale.x, +d[jgd3.getElementValue(d3.select('#xSelect'))], 0); })
     .attr('cy', function(d) {return jgd3.getScaledLinearValue(jgd3.scale.y, +d[jgd3.getElementValue(d3.select('#ySelect'))], 0); })
     .attr('r', function(d) {return jgd3.getScaledLinearValue(jgd3.scale.size, +d[jgd3.getElementValue(d3.select('#sizeSelect'))], 3.5); })
-    .style('fill', function(d) {return jgd3.getScaledOrdinalValue(jgd3.scale.colour, d[jgd3.getElementValue(d3.select('#colourSelect'))], '#d3d3d3'); })
+    .style('fill', function(d) {return jgd3.getScaledOrdinalValue(jgd3.scale.colour, d[jgd3.getElementValue(d3.select('#colourSelect'))], 'black'); })
   ;
 
   // enter
@@ -113,10 +141,13 @@ jgd3.redrawChart = function() {
     .attr('r', function(d) {return jgd3.getScaledLinearValue(jgd3.scale.size, +d[jgd3.getElementValue(d3.select('#sizeSelect'))], 3.5); })
     .attr('cx', 0)
     .attr('cy', 0)
+    .on('mouseover', jgd3.tip.show)
+    .on('mouseout', jgd3.tip.hide)
     .transition().duration(1500)
     .attr('cx', function(d) {return jgd3.getScaledLinearValue(jgd3.scale.x, +d[jgd3.getElementValue(d3.select('#xSelect'))], 0); })
     .attr('cy', function(d) {return jgd3.getScaledLinearValue(jgd3.scale.y, +d[jgd3.getElementValue(d3.select('#ySelect'))], 0); })
     .style('fill', function(d) {return jgd3.getScaledOrdinalValue(jgd3.scale.colour, d[jgd3.getElementValue(d3.select('#colourSelect'))], 'black'); })
+
   ;
 
   //remove

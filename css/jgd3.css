@@ -87,5 +87,14 @@ body {
 }
 
 .dot:hover {
-  fill: red;
+  fill: black;
+  stroke: black;
+}
+
+
+.d3-tip {
+ color: black; 
+ background-color: black;
+ z-index: 1000;
+ line-height: 1;
 }

@@ -87,6 +87,7 @@ jgd3.parameterChanged = function(d) {
   (changedElementId === 'sizeSelect') ? jgd3.resetLinearScale(jgd3.scale.size, function(d) {return (+d[selected[0]] === 0) ? null : +d[selected[0]]; }) : null;
   (changedElementId === 'colourSelect') ? jgd3.resetOrdinalScale(jgd3.scale.colour, function(d) {return (d[selected[0]] === 0) ? null : d[selected[0]]; }) : null;
   (changedElementId === 'tooltipSelect') ? jgd3.setTooltips() : null;
+  (changedElementId === 'filterSelect') ? jgd3.populateFilterControls() : null;
 
   //put condition here to only run if x and y defined
   jgd3.redrawChart();
@@ -169,7 +170,66 @@ jgd3.getScaledOrdinalValue = function(scale, value, ifNaN) {
   return scale(value);
 }
 
+jgd3.getVariableValue = function(variable) {
+  return d3.set(jgd3.datasets[0].data.map(function(d) { return d[variable]; })).values();
+}
 
+jgd3.populateFilterControls = function() {
+  console.log('changing filter list!');
+  var filters = d3.select('#filterSelect').selectAll('.filter-list')
+  .data(jgd3.getElementValue(d3.select('#filterSelect').select('select')).filter(function(d) {return d !== ''; }))
+  ;
+
+  // update
+  filters.select('label')
+  .text(function(d) { return d; })
+  ;
+
+  var filterOptions = filters.select('select').selectAll('option')
+   .data(function(d) {return jgd3.getVariableValue(d); })
+   ;
+
+   filterOptions.attr('value', function(d) { return d; })
+   .text(function(d) { return d; })
+  ;
+
+   filterOptions.enter()
+   .append('option')
+   .attr('value', function(d) { return d; })
+   .text(function(d) { return d; })
+  ;
+
+  filterOptions.exit().remove();
+
+  // enter
+  var newFilters = filters.enter()
+  .append('div')
+  .attr('class', 'filter-list')
+  .attr('id', function(d) { return 'filter-' + d; })
+  ;
+
+  newFilters.append('label')
+  .attr('for', function(d) { return 'filter-' + d; })
+  .text(function(d) { return d; })
+  ;
+
+  newFilters.append('select')
+   .attr('class', 'form-control input-sm')
+   .attr('multiple', 'multiple')
+   .selectAll('option')
+   .data(function(d) {return jgd3.getVariableValue(d); })
+   .enter()
+   .append('option')
+   .attr('value', function(d) { return d; })
+   .text(function(d) { return d; })
+  ;
+
+  // exit
+  filters.exit().remove();
+
+
+
+}
 jgd3.populateSelectControls = function(parameterList) {
   var formGroup = d3.select('#parameter-form').selectAll('.form-group').data(parameterList)
     .enter()

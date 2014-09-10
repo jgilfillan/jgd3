@@ -11,20 +11,34 @@ d3.select('#chart').datum([0,1,2,3,4,5,6]).call(mychart);
 function geom_point() {
   // default values
   var width = 800,
-      height = 600;
+      height = 600,
+      margin = { top: 20, right: 20, bottom: 20, left: 20 },
+      legend = { margin: 100, padding: 20 },
+      scaleX = d3.scale.linear(),
+      scaleY = d3.scale.linear(),
+      scaleSize = d3.scale.linear().domain([0,1]).range([0,10])
+  ;
 
   function my(selection) {
     selection.each(function(d, i) {
+
+      //update x scale
+      scaleX.domain(d3.extent(d, function(d) { return d; }))
+      .range([0, width - margin.left - margin.right - legend.margin - legend.padding]);
+
+      //update y scale
+      scaleY.domain(d3.extent(d, function(d, i) { return i * i; }))
+      .range([height - margin.top - margin.bottom, 0]);
 
       // select the SVG element, if it exists
       var svg = d3.select(this).selectAll('svg').data([d]);
 
       // otherwise create the skeletal chart
       var gEnter = svg.enter().append('svg').append('g');   // outer g element which contains both chart and legend
-      var chartArea = gEnter.append('g').attr('class', 'chart-area');   // chart g
-      chartArea.append('g').attr('class', 'x axis');
-      chartArea.append('g').attr('class', 'y axis');
-      var legendArea = gEnter.append('g').attr('class', 'legend-area');   // legend g
+      var chartAreaEnter = gEnter.append('g').attr('class', 'chart-area');   // chart g
+      chartAreaEnter.append('g').attr('class', 'x axis');
+      chartAreaEnter.append('g').attr('class', 'y axis');
+      var legendAreaEnter = gEnter.append('g').attr('class', 'legend-area');   // legend g
 
 
 
@@ -33,7 +47,68 @@ function geom_point() {
         .attr('width', width);
 
       // update inner dimensions
-      // gEnter
+      var g = svg.select('g').attr('transform', translateString(margin.left, margin.top));
+      var legendArea = svg.select('.legend-area').attr('transform', translateString(width - margin.left - margin.right - legend.margin - legend.padding, 0));
+
+      // update points
+      var dots = g.selectAll('.dot').data(d);
+
+      //update
+      dots.transition().duration(1500)
+        .attr('cx', function(d) {return scaleX(d); })
+        .attr('cy', function(d, i) {return scaleY(i*i); })
+        .attr('r', function(d) {return scaleSize(1); })
+        .style('fill', function(d) {return 'black'; })
+      ;
+
+      dots.enter()
+      .append('circle')
+      .attr('class', 'dot')
+      .attr('r', function(d) {return scaleSize(1); })
+      // .attr('cx', 0)
+      // .attr('cy', 0)
+      // .on('mouseover', jgd3.tip.show)
+      // .on('mouseout', jgd3.tip.hide)
+      // .transition().duration(1500)
+      .attr('cx', function(d) {return scaleX(d); })
+      .attr('cy', function(d, i) {return scaleY(i*i); })
+      .style('fill', function(d) {return 'black'; })
+      ;
+
+      //remove
+      dots.exit().transition().duration(1500).remove();
+
+
+      //   // POINTS
+//   var dots = this.chartArea.selectAll('.dot')
+//     .data(this.datasets[0].data)
+//   ;
+//   //update
+//   dots.transition().duration(1500)
+//     .attr('cx', function(d) {return jgd3.getScaledLinearValue(jgd3.scale.x, +d[jgd3.getElementValue(d3.select('#xSelect'))], 0); })
+//     .attr('cy', function(d) {return jgd3.getScaledLinearValue(jgd3.scale.y, +d[jgd3.getElementValue(d3.select('#ySelect'))], 0); })
+//     .attr('r', function(d) {return jgd3.getScaledLinearValue(jgd3.scale.size, +d[jgd3.getElementValue(d3.select('#sizeSelect'))], 3.5); })
+//     .style('fill', function(d) {return jgd3.getScaledOrdinalValue(jgd3.scale.colour, d[jgd3.getElementValue(d3.select('#colourSelect'))], 'black'); })
+//   ;
+
+//   // enter
+//   dots.enter()
+//     .append('circle')
+//     .attr('class', 'dot')
+//     .attr('r', function(d) {return jgd3.getScaledLinearValue(jgd3.scale.size, +d[jgd3.getElementValue(d3.select('#sizeSelect'))], 3.5); })
+//     .attr('cx', 0)
+//     .attr('cy', 0)
+//     .on('mouseover', jgd3.tip.show)
+//     .on('mouseout', jgd3.tip.hide)
+//     .transition().duration(1500)
+//     .attr('cx', function(d) {return jgd3.getScaledLinearValue(jgd3.scale.x, +d[jgd3.getElementValue(d3.select('#xSelect'))], 0); })
+//     .attr('cy', function(d) {return jgd3.getScaledLinearValue(jgd3.scale.y, +d[jgd3.getElementValue(d3.select('#ySelect'))], 0); })
+//     .style('fill', function(d) {return jgd3.getScaledOrdinalValue(jgd3.scale.colour, d[jgd3.getElementValue(d3.select('#colourSelect'))], 'black'); })
+
+//   ;
+
+//   //remove
+//   dots.exit().transition().duration(1500).remove();
 
     });
   }
@@ -51,11 +126,17 @@ function geom_point() {
     return my;
   };
 
-  my.data = function(value) {
-    if (!arguments.length) return data;
-    data = value;
-    return my;
-  };
+  my.scaleX = function(value) {
+    if (!arguments.length) return scaleX;
+    scaleX = value;
+    return scaleX;
+  }
+
+  my.scaleY = function(value) {
+    if (!arguments.length) return scaleY;
+    scaleY = value;
+    return scaleY;
+  }
 
 
 
@@ -155,10 +236,10 @@ function geom_point() {
 //   this.chart.call(this.tip);
 // }
 
-// //translate function
-// function translateString(x, y) {
-//   return 'translate(' + x + ',' + y + ')';
-// }
+//translate function
+function translateString(x, y) {
+  return 'translate(' + x + ',' + y + ')';
+}
 
 // // returns the index of a given obj in a given array.  optionally accepts an accessor function.
 // jgd3.indexOf = function (obj, array, accessor) {

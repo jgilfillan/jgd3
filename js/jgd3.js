@@ -5,8 +5,13 @@
 // instantiate chart with closure
 mychart = geom_point();
 
+var config = {
+  data: [{x: 10, y: 3},{x: 4, y: 2},{x: 8, y: 9}],
+  aes: {x: 'x', y: 'y'}
+};
+
 // pass selection to mychart
-d3.select('#chart1').datum({data: [{x: 10, y: 3},{x: 4, y: 2},{x: 8, y: 9}]}).call(mychart);
+d3.select('#chart1').datum(config).call(mychart);
 // d3.select('#chart2').datum([0,2,4,6,8,10.5]).call(mychart);
 
 function geom_point() {
@@ -18,22 +23,27 @@ function geom_point() {
       scaleX = d3.scale.linear(),
       scaleY = d3.scale.linear(),
       scaleSize = d3.scale.linear().domain([0,1]).range([0,10]),
+      scaleColour = d3.scale.category20(),
       axisX = d3.svg.axis().scale(scaleX).orient("bottom"),
       axisY = d3.svg.axis().scale(scaleY).orient("left"),
-      data = [];
+      data = [],
+      aes = {}
+      ;
+
   ;
 
   function my(selection) {
     selection.each(function(d, i) {
       data = d.data;
+      aes = d.aes;
 
       //update x scale
-      scaleX.domain(d3.extent(data, function(d) { return d['x']; }))
+      scaleX.domain(d3.extent(data, function(d) { return d[aes.x]; }))
       .range([0, width - margin.left - margin.right - legend.margin - legend.padding])
       .nice();
 
       //update y scale
-      scaleY.domain(d3.extent(data, function(d) { return d['y']; }))
+      scaleY.domain(d3.extent(data, function(d) { return d[aes.y]; }))
       .range([height - margin.top - margin.bottom, 0])
       .nice();
 
@@ -121,6 +131,17 @@ function geom_point() {
     scaleY = value;
     return scaleY;
   }
+
+  my.aes = function(aesthetic) {
+    if (!arguments.length) return aes;
+    if (arguments.length === 1 & typeof aes[aesthetic] != 'undefined') return aes[aesthetic];
+    return undefined;
+  }
+
+  my.data = function() {
+    return data;
+  }
+
 
 
   return my;

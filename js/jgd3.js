@@ -8,8 +8,8 @@ mychart = geom_point();
 var config = {
   data: [{x: 10, y: 3, type: 0.1, enrl_cnt: 5},{x: 4, y: 2, type: 0.2, enrl_cnt: 10},{x: 8, y: 9, type: 0.5, enrl_cnt: 15}],
   aes: {
-    x: 'x',
-    y: 'y',
+    x: { value: 'x' },
+    y: { value: 'y' },
     fill: {
       mapped: true,
       value: 'type',   // variable to map to fill colour
@@ -20,7 +20,11 @@ var config = {
       value: 'enrl_cnt',
       range: [5, 20]
     },
-
+    alpha: {
+      mapped: true,
+      value: 'enrl_cnt',
+      range: [.4, 1]
+    }
   },
 
 };
@@ -38,6 +42,7 @@ function geom_point() {
       scaleX = d3.scale.linear(),
       scaleY = d3.scale.linear(),
       scaleSize = null,
+      scaleAlpha = null,
       scaleFill = d3.scale.category20(),
       axisX = d3.svg.axis().scale(scaleX).orient("bottom"),
       axisY = d3.svg.axis().scale(scaleY).orient("left"),
@@ -45,7 +50,8 @@ function geom_point() {
       // default unmapped aesthetics
       aes = {
         fill: {mapped: false, value: 'black'},
-        size: {mapped: false, value: 10}
+        size: {mapped: false, value: 10},
+        alpha: {mapped: false, value: 1}
       }
       ;
 
@@ -61,12 +67,12 @@ function geom_point() {
       };
 
       //update x scale
-      scaleX.domain(d3.extent(data, function(d) { return d[aes.x]; }))
+      scaleX.domain(d3.extent(data, function(d) { return d[aes.x.value]; }))
       .range([0, width - margin.left - margin.right - legend.margin - legend.padding])
       .nice();
 
       //update y scale
-      scaleY.domain(d3.extent(data, function(d) { return d[aes.y]; }))
+      scaleY.domain(d3.extent(data, function(d) { return d[aes.y.value]; }))
       .range([height - margin.top - margin.bottom, 0])
       .nice();
 
@@ -95,6 +101,15 @@ function geom_point() {
         scaleSize = function() {return aes.size.value; };
       }
 
+      //update alpha scale
+      if (aes.alpha.mapped) {
+        scaleAlpha = d3.scale.linear().domain(d3.extent(data, function(d) { return d[aes.alpha.value]; }))
+        .range(aes.alpha.range);
+      }
+      else {
+        scaleAlpha = function() {return aes.alpha.value; };
+      }
+
       // select the SVG element, if it exists
       var svg = d3.select(this).selectAll('svg').data([d]);
 
@@ -118,9 +133,10 @@ function geom_point() {
 
       // update existing points
       dots.transition().duration(1500)
-        .attr('cx', function(d) {return scaleX(d['x']); })
-        .attr('cy', function(d, i) {return scaleY(d['y']); })
+        .attr('cx', function(d) {return scaleX(d[aes.x.value]); })
+        .attr('cy', function(d, i) {return scaleY(d[aes.y.value]); })
         .attr('r', function(d) {return scaleSize( (aes.size) ? d[aes.size.value] : null); })
+        .attr('fill-opacity', function(d) {return scaleAlpha( (aes.alpha) ? d[aes.alpha.value] : null); })
         .style('fill', function(d) { return scaleFill( (aes.fill) ? d[aes.fill.value] : null); })
       ;
 
@@ -129,11 +145,12 @@ function geom_point() {
       .append('circle')
       .attr('class', 'dot')
       .attr('r', 0)
+      .attr('fill-opacity', function(d) {return scaleAlpha( (aes.alpha) ? d[aes.alpha.value] : null); })
       .style('fill', function(d) { return scaleFill((aes.fill) ? d[aes.fill.value] : null); })
       // .on('mouseover', jgd3.tip.show)
       // .on('mouseout', jgd3.tip.hide)
-        .attr('cx', function(d) {return scaleX(d['x']); })
-        .attr('cy', function(d, i) {return scaleY(d['y']); })
+        .attr('cx', function(d) {return scaleX(d[aes.x.value]); })
+        .attr('cy', function(d, i) {return scaleY(d[aes.y.value]); })
       .transition().duration(1500)
       .attr('r', function(d) {return scaleSize( (aes.size) ? d[aes.size.value] : null); })
       ;

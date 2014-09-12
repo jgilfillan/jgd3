@@ -6,8 +6,23 @@
 mychart = geom_point();
 
 var config = {
-  data: [{x: 10, y: 3},{x: 4, y: 2},{x: 8, y: 9}],
-  aes: {x: 'x', y: 'y'}
+  data: [{x: 10, y: 3, type: 0.1, enrl_cnt: 5},{x: 4, y: 2, type: 0.2, enrl_cnt: 10},{x: 8, y: 9, type: 0.5, enrl_cnt: 15}],
+  aes: {
+    x: 'x',
+    y: 'y',
+    fill: {
+      mapped: true,
+      value: 'type',   // variable to map to fill colour
+      type: 'discrete'   // discrete or continuous scale?
+    },
+    size: {
+      mapped: true,
+      value: 'enrl_cnt',
+      range: [5, 20]
+    },
+
+  },
+
 };
 
 // pass selection to mychart
@@ -22,12 +37,16 @@ function geom_point() {
       legend = { margin: 100, padding: 20 },
       scaleX = d3.scale.linear(),
       scaleY = d3.scale.linear(),
-      scaleSize = d3.scale.linear().domain([0,1]).range([0,10]),
-      scaleColour = d3.scale.category20(),
+      scaleSize = null,
+      scaleFill = d3.scale.category20(),
       axisX = d3.svg.axis().scale(scaleX).orient("bottom"),
       axisY = d3.svg.axis().scale(scaleY).orient("left"),
       data = [],
-      aes = {}
+      // default unmapped aesthetics
+      aes = {
+        fill: {mapped: false, value: 'black'},
+        size: {mapped: false, value: 10}
+      }
       ;
 
   ;
@@ -35,7 +54,11 @@ function geom_point() {
   function my(selection) {
     selection.each(function(d, i) {
       data = d.data;
-      aes = d.aes;
+
+      // override default aesthetic mappings
+      for (prop in d.aes) {
+        aes[prop] = d.aes[prop];
+      };
 
       //update x scale
       scaleX.domain(d3.extent(data, function(d) { return d[aes.x]; }))
@@ -46,6 +69,31 @@ function geom_point() {
       scaleY.domain(d3.extent(data, function(d) { return d[aes.y]; }))
       .range([height - margin.top - margin.bottom, 0])
       .nice();
+
+      //update color scale
+      if (aes.fill.mapped) {
+        if (aes.fill.type === 'continuous') {
+          scaleFill = d3.scale.quantize()
+          .domain(d3.extent(data, function(d) { return d[aes.fill.value]; }))
+          .range(colorbrewer.RdBu[11]);
+        } 
+        // if not explicity configured as continuous, make scale discrete
+        else {
+          scaleFill = d3.scale.category20().domain(d3.extent(data, function(d) { return d[aes.fill.value]; }));
+        }
+      }
+      else {
+        scaleFill = function() {return aes.fill.value; };
+      }
+
+      //update size scale
+      if (aes.size.mapped) {
+        scaleSize = d3.scale.linear().domain(d3.extent(data, function(d) { return d[aes.size.value]; }))
+        .range(aes.size.range);
+      }
+      else {
+        scaleSize = function() {return aes.size.value; };
+      }
 
       // select the SVG element, if it exists
       var svg = d3.select(this).selectAll('svg').data([d]);
@@ -72,8 +120,8 @@ function geom_point() {
       dots.transition().duration(1500)
         .attr('cx', function(d) {return scaleX(d['x']); })
         .attr('cy', function(d, i) {return scaleY(d['y']); })
-        .attr('r', function(d) {return scaleSize(1); })
-        .style('fill', function(d) {return 'black'; })
+        .attr('r', function(d) {return scaleSize( (aes.size) ? d[aes.size.value] : null); })
+        .style('fill', function(d) { return scaleFill( (aes.fill) ? d[aes.fill.value] : null); })
       ;
 
       // insert new points
@@ -81,13 +129,13 @@ function geom_point() {
       .append('circle')
       .attr('class', 'dot')
       .attr('r', 0)
+      .style('fill', function(d) { return scaleFill((aes.fill) ? d[aes.fill.value] : null); })
       // .on('mouseover', jgd3.tip.show)
       // .on('mouseout', jgd3.tip.hide)
         .attr('cx', function(d) {return scaleX(d['x']); })
         .attr('cy', function(d, i) {return scaleY(d['y']); })
       .transition().duration(1500)
-      .attr('r', function(d) {return scaleSize(1); })
-      .style('fill', function(d) {return 'black'; })
+      .attr('r', function(d) {return scaleSize( (aes.size) ? d[aes.size.value] : null); })
       ;
 
       // remove deleted points
@@ -132,10 +180,14 @@ function geom_point() {
     return scaleY;
   }
 
+  my.scaleFill = function(value) {
+    if (!arguments.length) return scaleFill;
+    scaleFill = value;
+    return scaleFill;
+  }
+
   my.aes = function(aesthetic) {
-    if (!arguments.length) return aes;
-    if (arguments.length === 1 & typeof aes[aesthetic] != 'undefined') return aes[aesthetic];
-    return undefined;
+    return aes;
   }
 
   my.data = function() {

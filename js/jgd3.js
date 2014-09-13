@@ -11,18 +11,17 @@ var config = {
     x: { value: 'x', type: 'linear' },
     y: { value: 'y', type: 'linear' },
     fill: {
-      mapped: true,
       value: 'type',   // variable to map to fill colour
       type: 'discrete'   // discrete or continuous scale?
     },
     size: {
-      mapped: true,
       value: 'enrl_cnt',
+      type: 'linear',
       range: [5, 20]
     },
     alpha: {
-      mapped: true,
       value: 'enrl_cnt',
+      type: 'linear',
       range: [.4, 1]
     }
   },
@@ -49,9 +48,9 @@ function geom_point() {
       data = [],
       // default unmapped aesthetics
       aes = {
-        fill: {mapped: false, value: 'black'},
-        size: {mapped: false, value: 10},
-        alpha: {mapped: false, value: 1}
+        fill: {type: 'static', value: 'black'},
+        size: {type: 'static', value: 10},
+        alpha: {type: 'static', value: 1}
       }
       ;
 
@@ -60,22 +59,30 @@ function geom_point() {
   function my(selection) {
     selection.each(function(d, i) {
       data = d.data;
+      var nonDiscreteVariables = [];
 
       // override default aesthetic mappings
       for (prop in d.aes) {
         aes[prop] = d.aes[prop];
+        if (['linear'].some(function(e) { return (e === d.aes[prop].type); })) nonDiscreteVariables.push(d.aes[prop].value);
       }
+
+      // convert non-discrete values to numeric
+      console.log(nonDiscreteVariables);
+      console.log(data);
 
       // make x and y linear
       data = data.map(function(d) {
         for (prop in d) {
-          if (prop === aes.x.value || prop === aes.y.value) {  // implement checks for other linear scales
+          if (prop === aes.x.value || prop === aes.y.value || nonDiscreteVariables.some( function(e) { return (e === prop); } )) {  // implement checks for other linear scales
             d[prop] = +d[prop];
           }
         }
 
         return d;
       });
+
+      console.log(data);
 
       //update x scale
       scaleX.domain(d3.extent(data, function(d) { return d[aes.x.value]; }))
@@ -88,23 +95,21 @@ function geom_point() {
       .nice();
 
       //update color scale
-      if (aes.fill.mapped) {
-        if (aes.fill.type === 'continuous') {
-          scaleFill = d3.scale.quantize()
-          .domain(d3.extent(data, function(d) { return d[aes.fill.value]; }))
-          .range(colorbrewer.RdBu[11]);
-        } 
+      if (aes.fill.type === 'linear') {
+        scaleFill = d3.scale.quantize()
+        .domain(d3.extent(data, function(d) { return d[aes.fill.value]; }))
+        .range(colorbrewer.RdBu[11]);
+      } 
         // if not explicity configured as continuous, make scale discrete
-        else {
+        else if (aes.fill.type === 'discrete') {
           scaleFill = d3.scale.category20().domain(d3.extent(data, function(d) { return d[aes.fill.value]; }));
         }
-      }
-      else {
-        scaleFill = function() {return aes.fill.value; };
-      }
+        else {
+          scaleFill = function() {return aes.fill.value; };
+        }
 
       //update size scale
-      if (aes.size.mapped) {
+      if (aes.size.type === 'linear') {
         scaleSize = d3.scale.linear().domain(d3.extent(data, function(d) { return d[aes.size.value]; }))
         .range(aes.size.range);
       }
@@ -113,7 +118,7 @@ function geom_point() {
       }
 
       //update alpha scale
-      if (aes.alpha.mapped) {
+      if (aes.alpha.type === 'linear') {
         scaleAlpha = d3.scale.linear().domain(d3.extent(data, function(d) { return d[aes.alpha.value]; }))
         .range(aes.alpha.range);
       }
@@ -214,6 +219,12 @@ function geom_point() {
     return scaleFill;
   }
 
+  my.scaleSize = function(value) {
+    if (!arguments.length) return scaleSize;
+    scaleSize = value;
+    return scaleSize;
+  }
+
   my.aes = function(aesthetic) {
     return aes;
   }
@@ -283,9 +294,9 @@ function JGD3(chartElementSelector) {
   // properties
   this.datasets = [];
   this.aes = {
-    fill: {mapped: false, value: 'black'},
-    size: {mapped: false, value: 10},
-    alpha: {mapped: false, value: 1}
+    fill: {type: 'static', value: 'black'},
+    size: {type: 'static', value: 10},
+    alpha: {type: 'static', value: 1}
   }
   // this.scale = {
   //   x: d3.scale.linear().range([0, this.innerDim.width]),
@@ -372,6 +383,22 @@ jgd3.parameterChanged = function(d) {
       jgd3.aes.y = {value: selected[0]};
     }
   } 
+
+  // if fill mapping changes
+  if (changedElementId === 'colourSelect') {
+      (selected[0]) ? jgd3.aes.fill = {value: selected[0], type: 'discrete'} : delete jgd3.aes.fill;    // todo: implement discrete option
+  } 
+
+  // if size mapping changes
+  if (changedElementId === 'sizeSelect') {
+      (selected[0]) ? jgd3.aes.size = {value: selected[0], type: 'linear', range: [10, 20]} : delete jgd3.aes.size;    // todo: implement discrete option
+  }
+
+  // if size mapping changes
+  if (changedElementId === 'alphaSelect') {
+      (selected[0]) ? jgd3.aes.alpha = {value: selected[0], type: 'linear', range: [0.5, 1]} : delete jgd3.aes.alpha;    // todo: implement discrete option
+  } 
+
 
   // if filters selection changes
   (changedElementId === 'filterSelect') ? jgd3.populateFilterControls() : null;

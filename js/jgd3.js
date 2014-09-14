@@ -46,30 +46,29 @@ function geom_point() {
       axisX = d3.svg.axis().scale(scaleX).orient("bottom"),
       axisY = d3.svg.axis().scale(scaleY).orient("left"),
       data = [],
-      // default unmapped aesthetics
-      aes = {
+      defaultAes = {
         fill: {type: 'static', value: 'black'},
-        size: {type: 'static', value: 10},
+        size: {type: 'static', value: 5},
         alpha: {type: 'static', value: 1}
-      }
+      },
+      // default unmapped aesthetics
+      aes = null;
       ;
 
   ;
 
   function my(selection) {
     selection.each(function(d, i) {
+      var nonDiscreteVariables = [];    // to hold array of variables that need to be converted to numeric values
+
       data = d.data;
-      var nonDiscreteVariables = [];
+      aes = Object.create(defaultAes);
 
       // override default aesthetic mappings
       for (prop in d.aes) {
         aes[prop] = d.aes[prop];
         if (['linear'].some(function(e) { return (e === d.aes[prop].type); })) nonDiscreteVariables.push(d.aes[prop].value);
       }
-
-      // convert non-discrete values to numeric
-      // console.log(nonDiscreteVariables);
-      // console.log(data);
 
       // make x and y linear
       data = data.map(function(d) {
@@ -225,6 +224,10 @@ function geom_point() {
     return scaleSize;
   }
 
+  my.defaultAes = function() {
+    return defaultAes;
+  }
+
   my.aes = function(aesthetic) {
     return aes;
   }
@@ -275,7 +278,7 @@ function geom_point() {
 
 
 
-var jgd3 = new JGD3('#chart');
+var jgd3 = new JGD3('#chart1');
 
 // // comment out for real run..
 // // readDropBoxFile([{link: 'http://localhost:1651/sample/BenchmarkDC_Disclosure_2012.csv', name: 'BenchmarkDC_Disclosure_2012.csv'}]);
@@ -292,10 +295,11 @@ function JGD3(chartElementSelector) {
   // };
 
   // properties
+  this.chartSelector = chartElementSelector;
   this.datasets = [];
   this.aes = {
     fill: {type: 'static', value: 'black'},
-    size: {type: 'static', value: 10},
+    // size: {type: 'static', value: 10},
     alpha: {type: 'static', value: 1}
   }
   // this.scale = {
@@ -386,18 +390,18 @@ jgd3.parameterChanged = function(d) {
 
   // if fill mapping changes
   if (changedElementId === 'colourSelect') {
-      (selected[0] !== '') ? jgd3.aes.fill = {value: selected[0], type: 'discrete'} : jgd3.aes.fill = {type: 'static', value: 'black'};    // todo: implement discrete option + change else to pull default
+      (selected[0] !== '') ? jgd3.aes.fill = {value: selected[0], type: 'discrete'} : jgd3.aes.fill = mychart.defaultAes().size;    // todo: implement discrete option + change else to pull default
   } 
 
   // if size mapping changes
   if (changedElementId === 'sizeSelect') {
     console.log(selected[0]);
-      (selected[0] !== '') ? jgd3.aes.size = {value: selected[0], type: 'linear', range: [10, 20]} : jgd3.aes.size = {type: 'static', value: 10};    // todo: implement discrete option
+      (selected[0] !== '') ? jgd3.aes.size = {value: selected[0], type: 'linear', range: [10, 20]} : jgd3.aes.size = mychart.defaultAes().size;    // todo: implement discrete option
   }
 
   // if size mapping changes
   if (changedElementId === 'alphaSelect') {
-      (selected[0] !== '') ? jgd3.aes.alpha = {value: selected[0], type: 'linear', range: [0.5, 1]} : jgd3.aes.alpha = {type: 'static', value: 1};    // todo: implement discrete option
+      (selected[0] !== '') ? jgd3.aes.alpha = {value: selected[0], type: 'linear', range: [0.5, 1]} : jgd3.aes.alpha = mychart.defaultAes().size;    // todo: implement discrete option
   } 
 
 
@@ -409,7 +413,7 @@ jgd3.parameterChanged = function(d) {
   // if mandatory mappings exist, draw chart
   if (jgd3.aes.x && jgd3.aes.y) {
     config = {data: jgd3.datasets[0].data, aes: jgd3.aes};
-    d3.select('#chart1').datum(config).call(mychart);
+    d3.select(jgd3.chartSelector).datum(config).call(mychart);
   }
 
 }

@@ -68,8 +68,8 @@ function geom_point() {
       }
 
       // convert non-discrete values to numeric
-      console.log(nonDiscreteVariables);
-      console.log(data);
+      // console.log(nonDiscreteVariables);
+      // console.log(data);
 
       // make x and y linear
       data = data.map(function(d) {
@@ -82,7 +82,7 @@ function geom_point() {
         return d;
       });
 
-      console.log(data);
+      // console.log(data);
 
       //update x scale
       scaleX.domain(d3.extent(data, function(d) { return d[aes.x.value]; }))
@@ -386,22 +386,25 @@ jgd3.parameterChanged = function(d) {
 
   // if fill mapping changes
   if (changedElementId === 'colourSelect') {
-      (selected[0]) ? jgd3.aes.fill = {value: selected[0], type: 'discrete'} : delete jgd3.aes.fill;    // todo: implement discrete option
+      (selected[0] !== '') ? jgd3.aes.fill = {value: selected[0], type: 'discrete'} : jgd3.aes.fill = {type: 'static', value: 'black'};    // todo: implement discrete option + change else to pull default
   } 
 
   // if size mapping changes
   if (changedElementId === 'sizeSelect') {
-      (selected[0]) ? jgd3.aes.size = {value: selected[0], type: 'linear', range: [10, 20]} : delete jgd3.aes.size;    // todo: implement discrete option
+    console.log(selected[0]);
+      (selected[0] !== '') ? jgd3.aes.size = {value: selected[0], type: 'linear', range: [10, 20]} : jgd3.aes.size = {type: 'static', value: 10};    // todo: implement discrete option
   }
 
   // if size mapping changes
   if (changedElementId === 'alphaSelect') {
-      (selected[0]) ? jgd3.aes.alpha = {value: selected[0], type: 'linear', range: [0.5, 1]} : delete jgd3.aes.alpha;    // todo: implement discrete option
+      (selected[0] !== '') ? jgd3.aes.alpha = {value: selected[0], type: 'linear', range: [0.5, 1]} : jgd3.aes.alpha = {type: 'static', value: 1};    // todo: implement discrete option
   } 
 
 
   // if filters selection changes
   (changedElementId === 'filterSelect') ? jgd3.populateFilterControls() : null;
+
+  console.log(jgd3.aes);
 
   // if mandatory mappings exist, draw chart
   if (jgd3.aes.x && jgd3.aes.y) {

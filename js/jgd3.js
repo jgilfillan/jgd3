@@ -390,18 +390,18 @@ jgd3.parameterChanged = function(d) {
 
   // if fill mapping changes
   if (changedElementId === 'colourSelect') {
-      (selected[0] !== '') ? jgd3.aes.fill = {value: selected[0], type: 'discrete'} : jgd3.aes.fill = mychart.defaultAes().size;    // todo: implement discrete option + change else to pull default
+      (selected[0] !== '') ? jgd3.aes.fill = {value: selected[0], type: 'discrete'} : delete jgd3.aes.fill;    // todo: implement discrete option + change else to pull default
   } 
 
   // if size mapping changes
   if (changedElementId === 'sizeSelect') {
     console.log(selected[0]);
-      (selected[0] !== '') ? jgd3.aes.size = {value: selected[0], type: 'linear', range: [10, 20]} : jgd3.aes.size = mychart.defaultAes().size;    // todo: implement discrete option
+      (selected[0] !== '') ? jgd3.aes.size = {value: selected[0], type: 'linear', range: [10, 20]} : delete jgd3.aes.size;    // todo: implement discrete option
   }
 
   // if size mapping changes
   if (changedElementId === 'alphaSelect') {
-      (selected[0] !== '') ? jgd3.aes.alpha = {value: selected[0], type: 'linear', range: [0.5, 1]} : jgd3.aes.alpha = mychart.defaultAes().size;    // todo: implement discrete option
+      (selected[0] !== '') ? jgd3.aes.alpha = {value: selected[0], type: 'linear', range: [0.5, 1]} : delete jgd3.aes.alpha;    // todo: implement discrete option
   } 
 
 

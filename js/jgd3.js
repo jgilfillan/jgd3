@@ -1,11 +1,12 @@
-var jgd3 = new JGD3('#chart1');
-mychart = geom_point();
+
+var mychart = geom_point();
+var jgd3 = new JGD3('#chart1', mychart);
 
 // // comment out for real run..
 // // readDropBoxFile([{link: 'http://localhost:1651/sample/BenchmarkDC_Disclosure_2012.csv', name: 'BenchmarkDC_Disclosure_2012.csv'}]);
 
 
-function JGD3(chartElementSelector) {
+function JGD3(chartElementSelector, drawMethod) {
 
   // page info
   // this.outerDim = {width: 1100, height: 600};
@@ -17,6 +18,7 @@ function JGD3(chartElementSelector) {
 
   // properties
   this.chartSelector = chartElementSelector;
+  this.draw = drawMethod;
   this.datasets = [];
   this.aes = {
     fill: {type: 'static', value: 'black'},
@@ -110,7 +112,7 @@ jgd3.parameterChanged = function(d) {
   } 
 
   // if fill mapping changes
-  if (changedElementId === 'colourSelect') {
+  if (changedElementId === 'fillSelect') {
       (selected[0] !== '') ? jgd3.aes.fill = {value: selected[0], type: 'discrete'} : delete jgd3.aes.fill;    // todo: implement discrete option + change else to pull default
   } 
 
@@ -134,7 +136,7 @@ jgd3.parameterChanged = function(d) {
   // if mandatory mappings exist, draw chart
   if (jgd3.aes.x && jgd3.aes.y) {
     config = {data: jgd3.datasets[0].data, aes: jgd3.aes};
-    d3.select(jgd3.chartSelector).datum(config).call(mychart);
+    d3.select(jgd3.chartSelector).datum(config).call(jgd3.draw);
   }
 
 }
@@ -245,7 +247,7 @@ function Dataset(data, fileName) {
   this.parameters = [];
   this.parameters.push(new jgd3.Parameter('xSelect', 'x Axis Mapping', 'select', true, this.continuousV));
   this.parameters.push(new jgd3.Parameter('ySelect', 'y Axis Mapping', 'select', true, this.continuousV));
-  this.parameters.push(new jgd3.Parameter('colourSelect', 'Colour Mapping', 'select', false, this.discreteV));
+  this.parameters.push(new jgd3.Parameter('fillSelect', 'Fill Mapping', 'select', false, this.discreteV));
   this.parameters.push(new jgd3.Parameter('sizeSelect', 'Size Mapping', 'select', false, this.continuousV));
   this.parameters.push(new jgd3.Parameter('alphaSelect', 'Alpha Mapping', 'select', false, this.continuousV));
   this.parameters.push(new jgd3.Parameter('tooltipSelect', 'Tooltip Mapping', 'multi-select', false, this.continuousV.concat(this.discreteV)));

@@ -82,19 +82,11 @@ body {
   margin-bottom: 5px;
 }
 
-.dot:hover {
-  fill: black;
-}
-
-.dot:hover {
-  fill: black;
-  stroke: black;
-}
-
 
 .d3-tip {
  color: black; 
  background-color: black;
  z-index: 1000;
  line-height: 1;
+ padding: 12px 12px 12px 5px;
 }

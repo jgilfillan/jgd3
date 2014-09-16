@@ -61,6 +61,10 @@ function geom_point() {
 
   ;
 
+  function isNumber(n) {
+    return !isNaN(parseFloat(n)) && isFinite(n);
+  }
+
   function round(num, precision) {
     if (arguments.length === 0) {
       throw 'Must supply at least one numeric argument.  Usage:  round(number, [precision]).  If precision is omitted it defaults to precision of 0.';
@@ -110,7 +114,12 @@ function geom_point() {
       //update tooltip html function
       tip.html(function(d, i) {
         if (aes.tip.type === 'static') {
-          return '(' + round(d[aes.x.value], 2) + ', ' + round(d[aes.y.value], 2) + ')';
+          return '<p>(' + round(d[aes.x.value], 2) + ', ' + round(d[aes.y.value], 2) + ')</p>';
+        }
+        if (aes.tip.type === 'mapped') {
+          var tipHTML = '';
+          aes.tip.value.forEach(function(x) { tipHTML = tipHTML + '<p><strong>' + x + ':</strong>' + '<span style="color: red"> ' + ((isNumber(d[x])) ? round(d[x], 2) : d[x]) + '</span></p>';});
+          return tipHTML;
         }
       });
 
@@ -134,7 +143,10 @@ function geom_point() {
       } 
       // if not explicity configured as continuous, make scale discrete
       else if (aes.fill.type === 'discrete') {
-        scaleFill = d3.scale.category20().domain(d3.extent(data, function(d) { return d[aes.fill.value]; }));
+        //check how many unique values in fill variable
+        var uniqueFillValues = d3.set(data.map(function(x) { return x[aes.fill.value]; })).values().length;
+        scaleFill = (uniqueFillValues <= 10) ? d3.scale.category10() : d3.scale.category20();
+        scaleFill.domain(d3.extent(data, function(d) { return d[aes.fill.value]; }));
       }
       else {
         scaleFill = function() {return aes.fill.value; };

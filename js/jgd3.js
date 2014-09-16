@@ -127,6 +127,11 @@ jgd3.parameterChanged = function(d) {
       (selected[0] !== '') ? jgd3.aes.alpha = {value: selected[0], type: 'linear', range: [0.5, 1]} : delete jgd3.aes.alpha;    // todo: implement discrete option
   } 
 
+  // if size mapping changes
+  if (changedElementId === 'tooltipSelect') {
+      (selected[0] !== '') ? jgd3.aes.tip = {value: selected, type: 'mapped'} : delete jgd3.aes.tip;    // todo: implement discrete option
+  } 
+
 
   // if filters selection changes
   (changedElementId === 'filterSelect') ? jgd3.populateFilterControls() : null;

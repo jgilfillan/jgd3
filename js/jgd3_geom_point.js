@@ -48,19 +48,42 @@ function geom_point() {
       axisX = d3.svg.axis().scale(scaleX).orient("bottom"),
       axisY = d3.svg.axis().scale(scaleY).orient("left"),
       data = [],
+      attachedSelection = undefined;
       defaultAes = {
         fill: {type: 'static', value: 'black'},
         size: {type: 'static', value: 5},
-        alpha: {type: 'static', value: 1}
+        alpha: {type: 'static', value: 1},
+        tip: {type: 'static', value: []}      // {type: 'mapped', value: [field1, field2, etc..]
       },
-      // default unmapped aesthetics
-      aes = null;
-      ;
+      // variable to hold aesthetics specific to instantiated chart
+      aes = {},
+      tip = d3.tip().attr('class', 'd3-tip').direction('n').offset([-10, 0]);
 
   ;
 
+  function round(num, precision) {
+    if (arguments.length === 0) {
+      throw 'Must supply at least one numeric argument.  Usage:  round(number, [precision]).  If precision is omitted it defaults to precision of 0.';
+    }
+
+    if (arguments.length === 1) {
+      precision = 0;
+    }
+    return Math.round(num * Math.pow(10, precision)) / Math.pow(10, precision);
+  }
+
   function my(selection) {
-    selection.each(function(d, i) {
+    // if no arguments supplied, and no existing selection, raise error
+    if (arguments.length === 0 && typeof attachedSelection === 'undefined') {
+      throw 'No selection defined.  Call function with selection as a parameter';
+    }
+    // else save selection in variable
+    else if (arguments.length) {
+      attachedSelection = selection;
+    }
+
+    //draw chart
+    attachedSelection.each(function(d, i) {
       var nonDiscreteVariables = [];    // to hold array of variables that need to be converted to numeric values
 
       // attach config to 
@@ -84,6 +107,13 @@ function geom_point() {
         return d;
       });
 
+      //update tooltip html function
+      tip.html(function(d, i) {
+        if (aes.tip.type === 'static') {
+          return '(' + round(d[aes.x.value], 2) + ', ' + round(d[aes.y.value], 2) + ')';
+        }
+      });
+
       // console.log(data);
 
       //update x scale
@@ -102,13 +132,13 @@ function geom_point() {
         .domain(d3.extent(data, function(d) { return d[aes.fill.value]; }))
         .range(colorbrewer.RdBu[11]);
       } 
-        // if not explicity configured as continuous, make scale discrete
-        else if (aes.fill.type === 'discrete') {
-          scaleFill = d3.scale.category20().domain(d3.extent(data, function(d) { return d[aes.fill.value]; }));
-        }
-        else {
-          scaleFill = function() {return aes.fill.value; };
-        }
+      // if not explicity configured as continuous, make scale discrete
+      else if (aes.fill.type === 'discrete') {
+        scaleFill = d3.scale.category20().domain(d3.extent(data, function(d) { return d[aes.fill.value]; }));
+      }
+      else {
+        scaleFill = function() {return aes.fill.value; };
+      }
 
       //update size scale
       if (aes.size.type === 'linear') {
@@ -146,16 +176,22 @@ function geom_point() {
       var g = svg.select('g').attr('transform', translateString(margin.left, margin.top));
       var legendArea = svg.select('.legend-area').attr('transform', translateString(width - margin.left - margin.right - legend.margin - legend.padding, 0));
 
+      // attach tooltip to svg
+      g.call(tip);
+
       // update points
       var dots = g.selectAll('.dot').data(data);
 
       // update existing points
-      dots.transition().duration(1500)
-        .attr('cx', function(d) {return scaleX(d[aes.x.value]); })
-        .attr('cy', function(d, i) {return scaleY(d[aes.y.value]); })
-        .attr('r', function(d) {return scaleSize( (aes.size) ? d[aes.size.value] : null); })
-        .attr('fill-opacity', function(d) {return scaleAlpha( (aes.alpha) ? d[aes.alpha.value] : null); })
-        .style('fill', function(d) { return scaleFill( (aes.fill) ? d[aes.fill.value] : null); })
+      dots
+      .on('mouseover', tip.show)
+      .on('mouseout', tip.hide)
+      .transition().duration(1500)
+      .attr('cx', function(d) {return scaleX(d[aes.x.value]); })
+      .attr('cy', function(d, i) {return scaleY(d[aes.y.value]); })
+      .attr('r', function(d) {return scaleSize( (aes.size) ? d[aes.size.value] : null); })
+      .attr('fill-opacity', function(d) {return scaleAlpha( (aes.alpha) ? d[aes.alpha.value] : null); })
+      .style('fill', function(d) { return scaleFill( (aes.fill) ? d[aes.fill.value] : null); })
       ;
 
       // insert new points
@@ -167,8 +203,10 @@ function geom_point() {
       .style('fill', function(d) { return scaleFill((aes.fill) ? d[aes.fill.value] : null); })
       // .on('mouseover', jgd3.tip.show)
       // .on('mouseout', jgd3.tip.hide)
-        .attr('cx', function(d) {return scaleX(d[aes.x.value]); })
-        .attr('cy', function(d, i) {return scaleY(d[aes.y.value]); })
+      .attr('cx', function(d) {return scaleX(d[aes.x.value]); })
+      .attr('cy', function(d, i) {return scaleY(d[aes.y.value]); })
+      .on('mouseover', tip.show)
+      .on('mouseout', tip.hide)
       .transition().duration(1500)
       .attr('r', function(d) {return scaleSize( (aes.size) ? d[aes.size.value] : null); })
       ;
@@ -186,6 +224,7 @@ function geom_point() {
       g.select('.y.axis')
       .call(axisY)
       ;
+
 
     });
   }

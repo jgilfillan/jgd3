@@ -96,7 +96,7 @@ function geom_point() {
 
       // override default aesthetic mappings
       for (prop in d.aes) {
-        aes[prop] = d.aes[prop];
+        if (prop === 'x' || prop === 'y') aes[prop] = d.aes[prop];
         if (['linear'].some(function(e) { return (e === d.aes[prop].type); })) nonDiscreteVariables.push(d.aes[prop].value);
       }
 
@@ -282,12 +282,65 @@ function geom_point() {
     return defaultAes;
   }
 
-  my.aes = function(aesthetic) {
-    return aes;
-  }
+  // my.aes = function(aesthetic) {
+  //   return aes;
+  // }
 
   my.data = function() {
     return data;
+  }
+
+  my.setFill = function(prop, value) {
+    if (arguments.length === 1) return aes.fill[prop];
+    if (arguments.length === 2) {
+      if (value === null) {
+        aes.fill = defaultAes.fill;
+      }
+      else {
+        aes.fill[prop] = value;
+      }
+    }
+    return my;
+  }
+
+  my.setSize = function(prop, value) {
+    if (arguments.length === 1) return aes.size[prop];
+    if (arguments.length === 2) {
+      if (value === null) {
+        aes.size = defaultAes.size;
+      }
+      else {
+        aes.size[prop] = value;
+      }
+    }
+    return my;
+  }
+
+
+  my.setAlpha = function(prop, value) {
+    if (arguments.length === 1) return aes.alpha[prop];
+    if (arguments.length === 2) {
+      if (value === null) {
+        aes.alpha = defaultAes.alpha;
+      }
+      else {
+        aes.alpha[prop] = value;
+      }
+    }
+    return my;
+  }
+
+  my.setTooltip = function(prop, value) {
+    if (arguments.length === 1) return aes.tip[prop];
+    if (arguments.length === 2) {
+      if (value === null) {
+        aes.tip = defaultAes.tip;
+      }
+      else {
+        aes.tip[prop] = value;
+      }
+    }
+    return my;
   }
 
 
